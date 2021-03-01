@@ -14,7 +14,7 @@ from samplelib import (SampleGeneratorBase, SampleLoader, SampleProcessor,
 
 
 class SampleGeneratorFaceTemporal(SampleGeneratorBase):
-    def __init__ (self, samples_path, debug, batch_size,
+    def __init__(self, samples_path, debug, batch_size,
                         temporal_image_count=3,
                         sample_process_options=SampleProcessor.Options(),
                         output_sample_types=[],
@@ -26,11 +26,7 @@ class SampleGeneratorFaceTemporal(SampleGeneratorBase):
         self.sample_process_options = sample_process_options
         self.output_sample_types = output_sample_types
 
-        if self.debug:
-            self.generators_count = 1
-        else:
-            self.generators_count = generators_count
-
+        self.generators_count = 1 if self.debug else generators_count
         samples = SampleLoader.load (SampleType.FACE_TEMPORAL_SORTED, samples_path)
         samples_len = len(samples)
         if samples_len == 0:

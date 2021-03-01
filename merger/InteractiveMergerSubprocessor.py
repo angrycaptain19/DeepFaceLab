@@ -260,11 +260,11 @@ class InteractiveMergerSubprocessor(Subprocessor):
 
         if rewind_to_frame_idx is not None:
             while len(self.frames_done_idxs) > 0:
-                if self.frames_done_idxs[-1] > rewind_to_frame_idx:
-                    prev_frame = self.frames[self.frames_done_idxs.pop()]
-                    self.frames_idxs.insert(0, prev_frame.idx)
-                else:
+                if self.frames_done_idxs[-1] <= rewind_to_frame_idx:
                     break
+
+                prev_frame = self.frames[self.frames_done_idxs.pop()]
+                self.frames_idxs.insert(0, prev_frame.idx)
     #override
     def process_info_generator(self):
         r = [0] if MERGER_DEBUG else range(self.process_count)
@@ -381,28 +381,30 @@ class InteractiveMergerSubprocessor(Subprocessor):
             self.main_screen.set_waiting_icon( self.process_remain_frames or \
                                                self.is_interactive_quitting )
 
-            if cur_frame is not None and not self.is_interactive_quitting:
+            if (
+                cur_frame is not None
+                and not self.is_interactive_quitting
+                and not self.process_remain_frames
+            ):
+                if cur_frame.is_done:
+                    if not cur_frame.is_shown:
+                        if cur_frame.image is None:
+                            image      = cv2_imread (cur_frame.output_filepath, verbose=False)
+                            image_mask = cv2_imread (cur_frame.output_mask_filepath, verbose=False)
+                            if image is None or image_mask is None:
+                                # unable to read? recompute then
+                                cur_frame.is_done = False
+                            else:
+                                image = imagelib.normalize_channels(image, 3)
+                                image_mask = imagelib.normalize_channels(image_mask, 1)
+                                cur_frame.image = np.concatenate([image, image_mask], -1)
 
-                if not self.process_remain_frames:
-                    if cur_frame.is_done:
-                        if not cur_frame.is_shown:
-                            if cur_frame.image is None:
-                                image      = cv2_imread (cur_frame.output_filepath, verbose=False)
-                                image_mask = cv2_imread (cur_frame.output_mask_filepath, verbose=False)
-                                if image is None or image_mask is None:
-                                    # unable to read? recompute then
-                                    cur_frame.is_done = False
-                                else:
-                                    image = imagelib.normalize_channels(image, 3)
-                                    image_mask = imagelib.normalize_channels(image_mask, 1)
-                                    cur_frame.image = np.concatenate([image, image_mask], -1)
-
-                            if cur_frame.is_done:
-                                io.log_info (cur_frame.cfg.to_string( cur_frame.frame_info.filepath.name) )
-                                cur_frame.is_shown = True
-                                screen_image = cur_frame.image
-                    else:
-                        self.main_screen.set_waiting_icon(True)
+                        if cur_frame.is_done:
+                            io.log_info (cur_frame.cfg.to_string( cur_frame.frame_info.filepath.name) )
+                            cur_frame.is_shown = True
+                            screen_image = cur_frame.image
+                else:
+                    self.main_screen.set_waiting_icon(True)
 
             self.main_screen.set_image(screen_image)
             self.screen_manager.show_current()
@@ -480,16 +482,23 @@ class InteractiveMergerSubprocessor(Subprocessor):
                         prev_frame.is_shown = False
                         io.progress_bar_inc(-1)
 
-                        if cur_frame is not None and (go_prev_frame_overriding_cfg or go_first_frame_overriding_cfg):
-                            if prev_frame.cfg != cur_frame.cfg:
-                                prev_frame.cfg = cur_frame.cfg.copy()
-                                prev_frame.is_done = False
+                        if (
+                            cur_frame is not None
+                            and (
+                                go_prev_frame_overriding_cfg
+                                or go_first_frame_overriding_cfg
+                            )
+                            and prev_frame.cfg != cur_frame.cfg
+                        ):
+                            prev_frame.cfg = cur_frame.cfg.copy()
+                            prev_frame.is_done = False
 
                         cur_frame = prev_frame
 
-                    if go_first_frame_overriding_cfg or go_first_frame:
-                        if len(self.frames_done_idxs) > 0:
-                            continue
+                    if (go_first_frame_overriding_cfg or go_first_frame) and len(
+                        self.frames_done_idxs
+                    ) > 0:
+                        continue
                     break
 
         elif go_next_frame:
@@ -508,11 +517,7 @@ class InteractiveMergerSubprocessor(Subprocessor):
 
                     if go_next_frame_overriding_cfg or go_last_frame_overriding_cfg:
 
-                        if go_next_frame_overriding_cfg:
-                            to_frames = next_frame.idx+1
-                        else:
-                            to_frames = len(f)
-
+                        to_frames = next_frame.idx+1 if go_next_frame_overriding_cfg else len(f)
                         for i in range( next_frame.idx, to_frames ):
                             f[i].cfg = None
 

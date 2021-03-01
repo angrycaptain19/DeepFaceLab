@@ -27,13 +27,9 @@ def get_image_paths(dir_path, image_extensions=image_extensions, subdirs=False, 
     result = []
     if dir_path.exists():
 
-        if subdirs:
-            gen = scantree(str(dir_path))
-        else:
-            gen = scandir(str(dir_path))
-
+        gen = scantree(str(dir_path)) if subdirs else scandir(str(dir_path))
         for x in list(gen):
-            if any([x.name.lower().endswith(ext) for ext in image_extensions]):
+            if any(x.name.lower().endswith(ext) for ext in image_extensions):
                 result.append( x.path if not return_Path_class else Path(x.path) )
     return sorted(result)
 

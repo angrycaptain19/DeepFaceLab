@@ -42,6 +42,6 @@ def overlay_alpha_image(img_target, img_source, xy_offset=(0,0) ):
     alpha_s = img_source[:, :, 3] / 255.0
     alpha_l = 1.0 - alpha_s
 
-    for c in range(0, 3):
+    for c in range(3):
         img_target[y1:y2, x1:x2, c] = (alpha_s * img_source[:, :, c] +
                                         alpha_l * img_target[y1:y2, x1:x2, c])

@@ -35,7 +35,7 @@ def color_transfer_sot(src,trg, steps=10, batch_size=5, reg_sigmaXY=16.0, reg_si
     advect = np.empty ( (h*w,c), dtype=src_dtype )
     for step in range (steps):
         advect.fill(0)
-        for batch in range (batch_size):
+        for _ in range (batch_size):
             dir = np.random.normal(size=c).astype(src_dtype)
             dir /= npla.norm(dir)
 
@@ -316,8 +316,7 @@ def color_hist_match(src_im, tar_im, hist_match_threshold=255):
         to_stack += ( src_im[:,:,i],)
 
 
-    matched = np.stack(to_stack, axis=-1).astype(src_im.dtype)
-    return matched
+    return np.stack(to_stack, axis=-1).astype(src_im.dtype)
 
 def color_transfer_mix(img_src,img_trg):
     img_src = np.clip(img_src*255.0, 0, 255).astype(np.uint8)

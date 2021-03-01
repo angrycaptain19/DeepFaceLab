@@ -47,7 +47,7 @@ class RMSprop(nn.OptimizerBase):
         updates = []
 
         if self.clipnorm > 0.0:
-            norm = tf.sqrt( sum([tf.reduce_sum(tf.square(g)) for g,v in grads_vars]))
+            norm = tf.sqrt(sum(tf.reduce_sum(tf.square(g)) for g,v in grads_vars))
         updates += [ state_ops.assign_add( self.iterations, 1) ]
         for i, (g,v) in enumerate(grads_vars):
             if self.clipnorm > 0.0:

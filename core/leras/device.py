@@ -31,8 +31,7 @@ class Devices(object):
         return result
 
     def __iter__(self):
-        for device in self.devices:
-            yield device
+        yield from self.devices
 
     def get_best_device(self):
         result = None
@@ -61,25 +60,21 @@ class Devices(object):
         return None
 
     def get_devices_from_index_list(self, idx_list):
-        result = []
-        for device in self.devices:
-            if device.index in idx_list:
-                result += [device]
+        result = [device for device in self.devices if device.index in idx_list]
         return Devices(result)
 
     def get_equal_devices(self, device):
         device_name = device.name
-        result = []
-        for device in self.devices:
-            if device.name == device_name:
-                result.append (device)
+        result = [device for device in self.devices if device.name == device_name]
         return Devices(result)
 
     def get_devices_at_least_mem(self, totalmemsize_gb):
-        result = []
-        for device in self.devices:
-            if device.total_mem >= totalmemsize_gb*(1024**3):
-                result.append (device)
+        result = [
+            device
+            for device in self.devices
+            if device.total_mem >= totalmemsize_gb * (1024 ** 3)
+        ]
+
         return Devices(result)
 
     @staticmethod
@@ -145,13 +140,17 @@ class Devices(object):
         if Devices.all_devices is None:
             if int(os.environ.get("NN_DEVICES_INITIALIZED", 0)) != 1:
                 raise Exception("nn devices are not initialized. Run initialize_main_env() in main process.")
-            devices = []
-            for i in range ( int(os.environ['NN_DEVICES_COUNT']) ):
-                devices.append ( Device(index=i,
-                                        name=os.environ[f'NN_DEVICE_{i}_NAME'],
-                                        total_mem=int(os.environ[f'NN_DEVICE_{i}_TOTAL_MEM']),
-                                        free_mem=int(os.environ[f'NN_DEVICE_{i}_FREE_MEM']),
-                                        cc=int(os.environ[f'NN_DEVICE_{i}_CC']) ))
+            devices = [
+                Device(
+                    index=i,
+                    name=os.environ[f'NN_DEVICE_{i}_NAME'],
+                    total_mem=int(os.environ[f'NN_DEVICE_{i}_TOTAL_MEM']),
+                    free_mem=int(os.environ[f'NN_DEVICE_{i}_FREE_MEM']),
+                    cc=int(os.environ[f'NN_DEVICE_{i}_CC']),
+                )
+                for i in range(int(os.environ['NN_DEVICES_COUNT']))
+            ]
+
             Devices.all_devices = Devices(devices)
 
         return Devices.all_devices

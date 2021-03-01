@@ -717,17 +717,17 @@ Examples: df, liae, df-d, df-ud, liae-ud, ...
 
         n_samples = min(4, self.get_batch_size(), 800 // self.resolution )
 
-        if self.resolution <= 256:
-            result = []
+        st = []
+        st_m = []
+        result = []
 
-            st = []
+        if self.resolution <= 256:
             for i in range(n_samples):
                 ar = S[i], SS[i], D[i], DD[i], SD[i]
                 st.append ( np.concatenate ( ar, axis=1) )
             result += [ ('SAEHD', np.concatenate (st, axis=0 )), ]
 
 
-            st_m = []
             for i in range(n_samples):
                 SD_mask = DDM[i]*SDM[i] if self.face_type < FaceType.HEAD else SDM[i]
 
@@ -736,9 +736,6 @@ Examples: df, liae, df-d, df-ud, liae-ud, ...
 
             result += [ ('SAEHD masked', np.concatenate (st_m, axis=0 )), ]
         else:
-            result = []
-
-            st = []
             for i in range(n_samples):
                 ar = S[i], SS[i]
                 st.append ( np.concatenate ( ar, axis=1) )
@@ -757,7 +754,6 @@ Examples: df, liae, df-d, df-ud, liae-ud, ...
             result += [ ('SAEHD pred', np.concatenate (st, axis=0 )), ]
 
 
-            st_m = []
             for i in range(n_samples):
                 ar = S[i]*target_srcm[i], SS[i]
                 st_m.append ( np.concatenate ( ar, axis=1) )

@@ -95,7 +95,7 @@ class ModelBase(object):
 
                                             if is_rename:
                                                 name = io.input_str(f"Enter the name of the model you want to rename")
-                                            elif is_delete:
+                                            else:
                                                 name = io.input_str(f"Enter the name of the model you want to delete")
 
                                             if name in saved_models_names:
@@ -112,7 +112,7 @@ class ModelBase(object):
                                                         if is_rename:
                                                             new_filepath = filepath.parent / ( new_model_name + '_' + remain_filename )
                                                             filepath.rename (new_filepath)
-                                                        elif is_delete:
+                                                        else:
                                                             filepath.unlink()
                                         continue
 

@@ -153,9 +153,7 @@ class FaceEnhancer(object):
                 x = tf.nn.leaky_relu(self.out4x_conv0(x), 0.1)
                 x = self.out4x_conv1(x)
 
-                out4x = nn.resize2d_bilinear(out2x) + tf.nn.tanh(x)
-
-                return out4x
+                return nn.resize2d_bilinear(out2x) + tf.nn.tanh(x)
 
         model_path = Path(__file__).parent / "FaceEnhancer.npy"
         if not model_path.exists():

@@ -22,8 +22,7 @@ class ModelBase(nn.Saveable):
             for subname in layer.keys():
                 sublayer = layer[subname]
                 self._build_sub(sublayer, f"{name}_{subname}")
-        elif isinstance (layer, nn.LayerBase) or \
-                isinstance (layer, ModelBase):
+        elif isinstance(layer, (nn.LayerBase, ModelBase)):
 
             if layer.name is None:
                 layer.name = name
@@ -153,17 +152,14 @@ class ModelBase(nn.Saveable):
 
         self.run_output = self.__call__(self.run_placeholders)
 
-    def run (self, inputs):
+    def run(self, inputs):
         if self.run_placeholders is None:
             raise Exception ("Model didn't build for run.")
 
         if len(inputs) != len(self.run_placeholders):
             raise ValueError("len(inputs) != self.run_placeholders")
 
-        feed_dict = {}
-        for ph, inp in zip(self.run_placeholders, inputs):
-            feed_dict[ph] = inp
-
+        feed_dict = {ph: inp for ph, inp in zip(self.run_placeholders, inputs)}
         return nn.tf_sess.run ( self.run_output, feed_dict=feed_dict)
 
     def summary(self):
@@ -193,7 +189,7 @@ class ModelBase(nn.Saveable):
                 max_len_param_str=len(str(p))
 
         #Set delim
-        for i in range(max_len_str+max_len_param_str+3):
+        for _ in range(max_len_str+max_len_param_str+3):
             delim_str += "-"
 
         output = "\n"+delim_str+"\n"
@@ -216,11 +212,11 @@ class ModelBase(nn.Saveable):
             l_param = str(layers_params[i])
             l_param_str = ""
             if len(l_name)<=max_len_str:
-                for i in range(max_len_str - len(l_name)):
+                for _ in range(max_len_str - len(l_name)):
                     l_name+= " "
 
             if len(l_param)<=max_len_param_str:
-                for i in range(max_len_param_str - len(l_param)):
+                for _ in range(max_len_param_str - len(l_param)):
                     l_param_str+= " "
 
             l_param_str += l_param

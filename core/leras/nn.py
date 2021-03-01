@@ -50,25 +50,28 @@ class nn():
             nn.setCurrentDeviceConfig(device_config)
 
             # Manipulate environment variables before import tensorflow
-            
+
             if 'CUDA_VISIBLE_DEVICES' in os.environ.keys():
                 os.environ.pop('CUDA_VISIBLE_DEVICES')
 
             first_run = False
-            if len(device_config.devices) != 0:
-                if sys.platform[0:3] == 'win':
+            if len(device_config.devices) != 0 and sys.platform[0:3] == 'win':
                     # Windows specific env vars
-                    if all( [ x.name == device_config.devices[0].name for x in device_config.devices ] ):
-                        devices_str = "_" + device_config.devices[0].name.replace(' ','_')
-                    else:
-                        devices_str = ""
-                        for device in device_config.devices:
-                            devices_str += "_" + device.name.replace(' ','_')
+                if all(
+                    x.name == device_config.devices[0].name
+                    for x in device_config.devices
+                ):
+                    devices_str = "_" + device_config.devices[0].name.replace(' ','_')
+                else:
+                    devices_str = "".join(
+                        "_" + device.name.replace(' ', '_')
+                        for device in device_config.devices
+                    )
 
-                    compute_cache_path = Path(os.environ['APPDATA']) / 'NVIDIA' / ('ComputeCache' + devices_str)
-                    if not compute_cache_path.exists():
-                        first_run = True
-                    os.environ['CUDA_CACHE_PATH'] = str(compute_cache_path)
+                compute_cache_path = Path(os.environ['APPDATA']) / 'NVIDIA' / ('ComputeCache' + devices_str)
+                if not compute_cache_path.exists():
+                    first_run = True
+                os.environ['CUDA_CACHE_PATH'] = str(compute_cache_path)
 
             os.environ['TF_MIN_GPU_MULTIPROCESSOR_COUNT'] = '2'
             os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' # tf log errors only
@@ -77,23 +80,19 @@ class nn():
                 io.log_info("Caching GPU kernels...")
 
             import tensorflow
-            
+
             tf_version = getattr(tensorflow,'VERSION', None)
             if tf_version is None:
                 tf_version = tensorflow.version.GIT_VERSION
                 if tf_version[0] == 'v':
                     tf_version = tf_version[1:]
-                
-            if tf_version[0] == '2':
-                tf = tensorflow.compat.v1
-            else:
-                tf = tensorflow
 
+            tf = tensorflow.compat.v1 if tf_version[0] == '2' else tensorflow
             import logging
             # Disable tensorflow warnings
             tf_logger = logging.getLogger('tensorflow')
             tf_logger.setLevel(logging.ERROR)
-            
+
             if tf_version[0] == '2':
                 tf.disable_v2_behavior()
             nn.tf = tf
@@ -105,7 +104,7 @@ class nn():
             import core.leras.optimizers
             import core.leras.models
             import core.leras.archis
-            
+
             # Configure tensorflow session-config
             if len(device_config.devices) == 0:
                 nn.tf_default_device = "/CPU:0"
@@ -113,12 +112,15 @@ class nn():
             else:
                 nn.tf_default_device = "/GPU:0"
                 config = tf.ConfigProto()
-                config.gpu_options.visible_device_list = ','.join([str(device.index) for device in device_config.devices])
+                config.gpu_options.visible_device_list = ','.join(
+                    str(device.index) for device in device_config.devices
+                )
+
 
             config.gpu_options.force_gpu_compatible = True
             config.gpu_options.allow_growth = True
             nn.tf_sess_config = config
-            
+
         if nn.tf_sess is None:
             nn.tf_sess = tf.Session(config=nn.tf_sess_config)
 
@@ -144,16 +146,16 @@ class nn():
 
     @staticmethod
     def set_data_format(data_format):
-        if data_format != "NHWC" and data_format != "NCHW":
+        if data_format not in ["NHWC", "NCHW"]:
             raise ValueError(f"unsupported data_format {data_format}")
         nn.data_format = data_format
 
-        if data_format == "NHWC":
-            nn.conv2d_ch_axis = 3
-            nn.conv2d_spatial_axes = [1,2]
-        elif data_format == "NCHW":
+        if data_format == "NCHW":
             nn.conv2d_ch_axis = 1
             nn.conv2d_spatial_axes = [2,3]
+        elif data_format == "NHWC":
+            nn.conv2d_ch_axis = 3
+            nn.conv2d_spatial_axes = [1,2]
 
     @staticmethod
     def get4Dshape ( w, h, c ):
@@ -189,11 +191,10 @@ class nn():
 
     @staticmethod
     def reset_session():
-        if nn.tf is not None:
-            if nn.tf_sess is not None:
-                nn.tf.reset_default_graph()
-                nn.tf_sess.close()
-                nn.tf_sess = nn.tf.Session(config=nn.tf_sess_config)
+        if nn.tf is not None and nn.tf_sess is not None:
+            nn.tf.reset_default_graph()
+            nn.tf_sess.close()
+            nn.tf_sess = nn.tf.Session(config=nn.tf_sess_config)
 
     @staticmethod
     def close_session():
@@ -228,7 +229,7 @@ class nn():
             best_device_indexes = [device.index for device in devices.get_equal_devices(devices.get_best_device()) ]
         else:
             best_device_indexes = [ devices.get_best_device().index ]
-        best_device_indexes = ",".join([str(x) for x in best_device_indexes])
+        best_device_indexes = ",".join(str(x) for x in best_device_indexes)
 
         io.log_info ("")
         if choose_only_one:
@@ -261,7 +262,7 @@ class nn():
                     if len(choosed_idxs) == 1:
                         break
                 else:
-                    if all( [idx in all_devices_indexes for idx in choosed_idxs] ):
+                    if all(idx in all_devices_indexes for idx in choosed_idxs):
                         break
             except:
                 pass

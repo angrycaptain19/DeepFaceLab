@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 from core import randomex
 
-def gen_warp_params (w, flip, rotation_range=[-10,10], scale_range=[-0.5, 0.5], tx_range=[-0.05, 0.05], ty_range=[-0.05, 0.05], rnd_state=None  ):
+def gen_warp_params(w, flip, rotation_range=[-10,10], scale_range=[-0.5, 0.5], tx_range=[-0.05, 0.05], ty_range=[-0.05, 0.05], rnd_state=None  ):
     if rnd_state is None:
         rnd_state = np.random
 
@@ -10,7 +10,7 @@ def gen_warp_params (w, flip, rotation_range=[-10,10], scale_range=[-0.5, 0.5], 
     if w < 64:        
         rw = w
         w = 64
-        
+
     rotation = rnd_state.uniform( rotation_range[0], rotation_range[1] )
     scale = rnd_state.uniform(1 +scale_range[0], 1 +scale_range[1])
     tx = rnd_state.uniform( tx_range[0], tx_range[1] )
@@ -37,10 +37,7 @@ def gen_warp_params (w, flip, rotation_range=[-10,10], scale_range=[-0.5, 0.5], 
     random_transform_mat = cv2.getRotationMatrix2D((w // 2, w // 2), rotation, scale)
     random_transform_mat[:, 2] += (tx*w, ty*w)
 
-    params = dict()
-    params['mapx'] = mapx
-    params['mapy'] = mapy
-    params['rmat'] = random_transform_mat
+    params = {'mapx': mapx, 'mapy': mapy, 'rmat': random_transform_mat}
     u_mat = random_transform_mat.copy()
     u_mat[:,2] /= w
     params['umat'] = u_mat

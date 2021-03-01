@@ -20,9 +20,16 @@ class XSegModel(ModelBase):
     def on_initialize_options(self):
         ask_override = self.ask_override()
 
-        if not self.is_first_run() and ask_override:
-            if io.input_bool(f"Restart training?", False, help_message="Reset model weights and start training from scratch."):
-                self.set_iter(0)
+        if (
+            not self.is_first_run()
+            and ask_override
+            and io.input_bool(
+                f"Restart training?",
+                False,
+                help_message="Reset model weights and start training from scratch.",
+            )
+        ):
+            self.set_iter(0)
 
         default_face_type          = self.options['face_type']          = self.load_or_def_option('face_type', 'wf')
 

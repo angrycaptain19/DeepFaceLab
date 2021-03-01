@@ -36,12 +36,10 @@ class DepthwiseConv2D(nn.LayerBase):
 
         if nn.data_format == "NHWC":
             strides = [1,strides,strides,1]
+            dilations = [1,dilations,dilations,1]
         else:
             strides = [1,1,strides,strides]
 
-        if nn.data_format == "NHWC":
-            dilations = [1,dilations,dilations,1]
-        else:
             dilations = [1,1,dilations,dilations]
 
         self.in_ch = in_ch
@@ -104,7 +102,6 @@ class DepthwiseConv2D(nn.LayerBase):
         return x
 
     def __str__(self):
-        r = f"{self.__class__.__name__} : in_ch:{self.in_ch} depth_multiplier:{self.depth_multiplier} "
-        return r
+        return f"{self.__class__.__name__} : in_ch:{self.in_ch} depth_multiplier:{self.depth_multiplier} "
 
 nn.DepthwiseConv2D = DepthwiseConv2D

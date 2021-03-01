@@ -64,13 +64,12 @@ class Saveable():
         returns True if file exists
         """
         filepath = Path(filename)
-        if filepath.exists():
-            result = True
-            d_dumped = filepath.read_bytes()
-            d = pickle.loads(d_dumped)
-        else:
+        if not filepath.exists():
             return False
 
+        result = True
+        d_dumped = filepath.read_bytes()
+        d = pickle.loads(d_dumped)
         weights = self.get_weights()
 
         if self.name is None:
@@ -97,7 +96,7 @@ class Saveable():
             nn.batch_set_value(tuples)
         except:
             return False
-            
+
         return True
 
     def init_weights(self):

@@ -55,9 +55,9 @@ class SampleGeneratorImageTemporal(SampleGeneratorBase):
         while True:
 
             batches = None
-            for n_batch in range(self.batch_size):
+            for _ in range(self.batch_size):
 
-                if len(shuffle_idxs) == 0:
+                if not shuffle_idxs:
                     shuffle_idxs = [ *range(samples_sub_len) ]
                     np.random.shuffle (shuffle_idxs)
 

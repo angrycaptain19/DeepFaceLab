@@ -115,7 +115,7 @@ class ExtractSubprocessor(Subprocessor):
                                                                 rects_extractor=self.rects_extractor,
                                                                 )
 
-            if self.type == 'final' or self.type == 'all':
+            if self.type in ['final', 'all']:
                 data = ExtractSubprocessor.Cli.final_stage(data=data,
                                                            image=image,
                                                            face_type=self.face_type,
@@ -297,13 +297,13 @@ class ExtractSubprocessor(Subprocessor):
             return data.filepath
 
     @staticmethod
-    def get_devices_for_config (type, device_config):
+    def get_devices_for_config(type, device_config):
         devices = device_config.devices
-        cpu_only = len(devices) == 0
-
         if 'rects'     in type or \
            'landmarks' in type or \
            'all'       in type:
+
+            cpu_only = len(devices) == 0
 
             if not cpu_only:
                 if type == 'landmarks-manual':
@@ -311,9 +311,9 @@ class ExtractSubprocessor(Subprocessor):
 
                 result = []
 
-                for device in devices:
-                    count = 1
+                count = 1
 
+                for device in devices:
                     if count == 1:
                         result += [ (device.index, 'GPU', device.name, device.total_mem_gb) ]
                     else:
@@ -502,7 +502,7 @@ class ExtractSubprocessor(Subprocessor):
                         key_events = io.get_key_events(self.wnd_name)
                         key, chr_key, ctrl_pressed, alt_pressed, shift_pressed = key_events[-1] if len(key_events) > 0 else (0,0,False,False,False)
 
-                        if key == ord('\r') or key == ord('\n'):
+                        if key in [ord('\r'), ord('\n')]:
                             #confirm frame
                             is_frame_done = True
                             data_rects.append (self.rect)
@@ -615,8 +615,8 @@ class ExtractSubprocessor(Subprocessor):
         return None
 
     #override
-    def on_data_return (self, host_dict, data):
-        if not self.type != 'landmarks-manual':
+    def on_data_return(self, host_dict, data):
+        if self.type == 'landmarks-manual':
             self.input_data.insert(0, data)
 
     def redraw(self):
@@ -683,7 +683,7 @@ class DeletedFilesSearcherSubprocessor(Subprocessor):
         #override
         def process_data(self, data):
             input_path_stem = Path(data[0]).stem
-            return any ( [ input_path_stem == d_stem for d_stem in self.debug_paths_stems] )
+            return any(input_path_stem == d_stem for d_stem in self.debug_paths_stems)
 
         #override
         def get_data_name (self, data):
@@ -755,13 +755,12 @@ def main(detector=None,
     if face_type is not None:
         face_type = FaceType.fromString(face_type)
 
-    if face_type is None:
-        if manual_output_debug_fix:
-            files = pathex.get_image_paths(output_path)
-            if len(files) != 0:
-                dflimg = DFLIMG.load(Path(files[0]))
-                if dflimg is not None and dflimg.has_data():
-                     face_type = FaceType.fromString ( dflimg.get_face_type() )
+    if face_type is None and manual_output_debug_fix:
+        files = pathex.get_image_paths(output_path)
+        if len(files) != 0:
+            dflimg = DFLIMG.load(Path(files[0]))
+            if dflimg is not None and dflimg.has_data():
+                 face_type = FaceType.fromString ( dflimg.get_face_type() )
 
     input_image_paths = pathex.get_image_unique_filestem_paths(input_path, verbose_print_func=io.log_info)
     output_images_paths = pathex.get_image_paths(output_path)
@@ -852,7 +851,7 @@ def main(detector=None,
                                          final_output_path=output_path,
                                          device_config=device_config).run()
 
-        faces_detected += sum([d.faces_detected for d in data])
+        faces_detected += sum(d.faces_detected for d in data)
 
         if manual_fix:
             if all ( np.array ( [ d.faces_detected > 0 for d in data] ) == True ):
@@ -862,7 +861,7 @@ def main(detector=None,
                 io.log_info ('Performing manual fix for %d images...' % (len(fix_data)) )
                 fix_data = ExtractSubprocessor (fix_data, 'landmarks-manual', image_size, jpeg_quality, face_type, output_debug_path if output_debug else None, manual_window_size=manual_window_size, device_config=device_config).run()
                 fix_data = ExtractSubprocessor (fix_data, 'final', image_size, jpeg_quality, face_type, output_debug_path if output_debug else None, final_output_path=output_path, device_config=device_config).run()
-                faces_detected += sum([d.faces_detected for d in fix_data])
+                faces_detected += sum(d.faces_detected for d in fix_data)
 
 
     io.log_info ('-------------------------')

@@ -16,14 +16,14 @@ from facelib import LandmarksProcessor
 from samplelib import (SampleGeneratorBase, SampleLoader, SampleProcessor, SampleType)
 
 class SampleGeneratorFaceXSeg(SampleGeneratorBase):
-    def __init__ (self, paths, debug=False, batch_size=1, resolution=256, face_type=None,
+    def __init__(self, paths, debug=False, batch_size=1, resolution=256, face_type=None,
                         generators_count=4, data_format="NHWC",
                         **kwargs):
 
         super().__init__(debug, batch_size)
         self.initialized = False
 
-        samples = sum([ SampleLoader.load (SampleType.FACE, path) for path in paths ]  )
+        samples = sum(SampleLoader.load (SampleType.FACE, path) for path in paths)
         seg_sample_idxs = SegmentedSampleFilterSubprocessor(samples).run()
 
         if len(seg_sample_idxs) == 0:
@@ -37,12 +37,10 @@ class SampleGeneratorFaceXSeg(SampleGeneratorBase):
 
         if self.debug:
             self.generators_count = 1
+            self.generators = [ThisThreadGenerator ( self.batch_func, (samples, seg_sample_idxs, resolution, face_type, data_format) )]
         else:
             self.generators_count = max(1, generators_count)
 
-        if self.debug:
-            self.generators = [ThisThreadGenerator ( self.batch_func, (samples, seg_sample_idxs, resolution, face_type, data_format) )]
-        else:
             self.generators = [SubprocessGenerator ( self.batch_func, (samples, seg_sample_idxs, resolution, face_type, data_format), start_now=False ) \
                                for i in range(self.generators_count) ]
 

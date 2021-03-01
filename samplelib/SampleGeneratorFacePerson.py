@@ -47,8 +47,8 @@ class Index2DHost():
                     count = obj[2]
 
                     result = []
-                    for i in range(count):
-                        if len(shuffle_idxs) == 0:
+                    for _ in range(count):
+                        if not shuffle_idxs:
                             shuffle_idxs = idxs.copy()
                             np.random.shuffle(shuffle_idxs)
                         result.append(shuffle_idxs.pop())
@@ -59,7 +59,7 @@ class Index2DHost():
 
                     for targ_idx in targ_idxs:
                         sub_idxs = []
-                        for i in range(count):
+                        for _ in range(count):
                             ar = shuffle_idxs_2D[targ_idx]
                             if len(ar) == 0:
                                 ar = shuffle_idxs_2D[targ_idx] = idxs_2D[targ_idx].copy()
@@ -112,7 +112,7 @@ output_sample_types = [
                       ]
 '''
 class SampleGeneratorFacePerson(SampleGeneratorBase):
-    def __init__ (self, samples_path, debug=False, batch_size=1,
+    def __init__(self, samples_path, debug=False, batch_size=1,
                         sample_process_options=SampleProcessor.Options(),
                         output_sample_types=[],
                         person_id_mode=1,
@@ -124,29 +124,6 @@ class SampleGeneratorFacePerson(SampleGeneratorBase):
         self.person_id_mode = person_id_mode
 
         raise NotImplementedError("Currently SampleGeneratorFacePerson is not implemented.")
-
-        samples_host = SampleLoader.mp_host (SampleType.FACE, samples_path)
-        samples = samples_host.get_list()
-        self.samples_len = len(samples)
-
-        if self.samples_len == 0:
-            raise ValueError('No training data provided.')
-
-        unique_person_names = { sample.person_name for sample in samples }
-        persons_name_idxs = { person_name : [] for person_name in unique_person_names }
-        for i,sample in enumerate(samples):
-            persons_name_idxs[sample.person_name].append (i)
-        indexes2D = [ persons_name_idxs[person_name] for person_name in unique_person_names ]
-        index2d_host = Index2DHost(indexes2D)
-
-        if self.debug:
-            self.generators_count = 1
-            self.generators = [iter_utils.ThisThreadGenerator ( self.batch_func, (samples_host.create_cli(), index2d_host.create_cli(),) )]
-        else:
-            self.generators_count = np.clip(multiprocessing.cpu_count(), 2, 4)
-            self.generators = [iter_utils.SubprocessGenerator ( self.batch_func, (samples_host.create_cli(), index2d_host.create_cli(),) ) for i in range(self.generators_count) ]
-
-        self.generator_counter = -1
 
     def __iter__(self):
         return self

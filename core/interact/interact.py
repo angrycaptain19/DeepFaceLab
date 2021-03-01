@@ -102,24 +102,25 @@ class InteractBase(object):
             self.focus_wnd_name = None
 
     def destroy_window(self, wnd_name):
-        if wnd_name in self.named_windows:
-            self.on_destroy_window(wnd_name)
-            self.named_windows.pop(wnd_name)
+        if wnd_name not in self.named_windows:
+            return
+        self.on_destroy_window(wnd_name)
+        self.named_windows.pop(wnd_name)
 
-            if wnd_name == self.focus_wnd_name:
-                self.focus_wnd_name = list(self.named_windows.keys())[-1] if len( self.named_windows ) != 0 else None
+        if wnd_name == self.focus_wnd_name:
+            self.focus_wnd_name = list(self.named_windows.keys())[-1] if len( self.named_windows ) != 0 else None
 
-            if wnd_name in self.capture_mouse_windows:
-                self.capture_mouse_windows.pop(wnd_name)
+        if wnd_name in self.capture_mouse_windows:
+            self.capture_mouse_windows.pop(wnd_name)
 
-            if wnd_name in self.capture_keys_windows:
-                self.capture_keys_windows.pop(wnd_name)
+        if wnd_name in self.capture_keys_windows:
+            self.capture_keys_windows.pop(wnd_name)
 
-            if wnd_name in self.mouse_events:
-                self.mouse_events.pop(wnd_name)
+        if wnd_name in self.mouse_events:
+            self.mouse_events.pop(wnd_name)
 
-            if wnd_name in self.key_events:
-                self.key_events.pop(wnd_name)
+        if wnd_name in self.key_events:
+            self.key_events.pop(wnd_name)
 
     def show_image(self, wnd_name, img):
         if wnd_name in self.named_windows:
@@ -165,8 +166,7 @@ class InteractBase(object):
 
     def progress_bar_generator(self, data, desc=None, leave=True, initial=0):
         self.pg_bar = tqdm( data, desc=desc, leave=leave, ascii=True, initial=initial )
-        for x in self.pg_bar:
-            yield x
+        yield from self.pg_bar
         self.pg_bar.close()
         self.pg_bar = None
 
@@ -258,11 +258,7 @@ class InteractBase(object):
 
     def input_int(self, s, default_value, valid_range=None, valid_list=None, add_info=None, show_default_value=True, help_message=None):
         if show_default_value:
-            if len(s) != 0:
-                s = f"[{default_value}] {s}"
-            else:
-                s = f"[{default_value}]"
-
+            s = f"[{default_value}] {s}" if len(s) != 0 else f"[{default_value}]"
         if add_info is not None or \
            valid_range is not None or \
            help_message is not None:
@@ -575,7 +571,4 @@ class InteractColab(InteractBase):
         pass
         #print("on_wait_any_key(): Colab does not support")
 
-if is_colab:
-    interact = InteractColab()
-else:
-    interact = InteractDesktop()
+interact = InteractColab() if is_colab else InteractDesktop()

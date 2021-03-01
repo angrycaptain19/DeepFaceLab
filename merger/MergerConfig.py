@@ -79,7 +79,7 @@ mode_dict = {0:'original',
              5:'raw-rgb',
              6:'raw-predict'}
 
-mode_str_dict = { mode_dict[key] : key for key in mode_dict.keys() }
+mode_str_dict = {mode_dict[key]: key for key in mode_dict}
 
 mask_mode_dict = {1:'dst',
                   2:'learned-prd',
@@ -153,7 +153,7 @@ class MergerConfigMasked(MergerConfig):
             self.masked_hist_match = not self.masked_hist_match
 
     def add_hist_match_threshold(self, diff):
-        if self.mode == 'hist-match' or self.mode == 'seamless-hist-match':
+        if self.mode in ['hist-match', 'seamless-hist-match']:
             self.hist_match_threshold = np.clip ( self.hist_match_threshold+diff , 0, 255)
 
     def toggle_mask_mode(self):
@@ -200,7 +200,7 @@ class MergerConfigMasked(MergerConfig):
             if self.mode == 'hist-match':
                 self.masked_hist_match = io.input_bool("Masked hist match?", True)
 
-            if self.mode == 'hist-match' or self.mode == 'seamless-hist-match':
+            if self.mode in ['hist-match', 'seamless-hist-match']:
                 self.hist_match_threshold = np.clip ( io.input_int("Hist match threshold", 255, add_info="0..255"), 0, 255)
 
         s = """Choose mask mode: \n"""
@@ -261,7 +261,7 @@ class MergerConfigMasked(MergerConfig):
         if self.mode == 'hist-match':
             r += f"""masked_hist_match: {self.masked_hist_match}\n"""
 
-        if self.mode == 'hist-match' or self.mode == 'seamless-hist-match':
+        if self.mode in ['hist-match', 'seamless-hist-match']:
             r += f"""hist_match_threshold: {self.hist_match_threshold}\n"""
 
         r += f"""mask_mode: { mask_mode_dict[self.mask_mode] }\n"""

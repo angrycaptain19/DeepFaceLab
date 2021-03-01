@@ -69,15 +69,13 @@ class QXIconButton(QPushButton):
         key = ev.nativeVirtualKey()
         if ev.isAutoRepeat():
             return
-            
-        if self.seq is not None:
-            if key == self.seq[0]:
-                self.action(is_pressed=True)
+
+        if self.seq is not None and key == self.seq[0]:
+            self.action(is_pressed=True)
 
     def on_keyReleaseEvent(self, ev):
         key = ev.nativeVirtualKey()
         if ev.isAutoRepeat():
             return
-        if self.seq is not None:
-            if key == self.seq[0]:
-                self.action(is_pressed=False)
+        if self.seq is not None and key == self.seq[0]:
+            self.action(is_pressed=False)

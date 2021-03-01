@@ -60,10 +60,10 @@ MaskType_to_name = {
     int(MaskType.u_lip ) : 'u_lip',
 }
 
-MaskType_from_name = { MaskType_to_name[k] : k for k in MaskType_to_name.keys() }
+MaskType_from_name = {MaskType_to_name[k]: k for k in MaskType_to_name}
 
 class SampleGeneratorFaceCelebAMaskHQ(SampleGeneratorBase):
-    def __init__ (self, root_path, debug=False, batch_size=1, resolution=256,
+    def __init__(self, root_path, debug=False, batch_size=1, resolution=256,
                         generators_count=4, data_format="NHWC",
                         **kwargs):
 
@@ -83,11 +83,7 @@ class SampleGeneratorFaceCelebAMaskHQ(SampleGeneratorBase):
             raise ValueError(f'Unable to find {masks_path}')
 
 
-        if self.debug:
-            self.generators_count = 1
-        else:
-            self.generators_count = max(1, generators_count)
-
+        self.generators_count = 1 if self.debug else max(1, generators_count)
         source_images_paths = pathex.get_image_paths(images_path, return_Path_class=True)
         source_images_paths_len = len(source_images_paths)
         mask_images_paths = pathex.get_image_paths(masks_path, subdirs=True, return_Path_class=True)
@@ -116,7 +112,7 @@ class SampleGeneratorFaceCelebAMaskHQ(SampleGeneratorBase):
             file_id = int(stem)
             source_file_id_set.update ( {file_id} )
 
-        for k in mask_file_id_hash.keys():
+        for k in mask_file_id_hash:
             if k not in source_file_id_set:
                 io.log_err (f"Corrupted dataset: {k} not in {images_path}")
 
@@ -171,7 +167,7 @@ class SampleGeneratorFaceCelebAMaskHQ(SampleGeneratorBase):
             n_batch = 0
             while n_batch < bs:
                 try:
-                    if len(shuffle_file_ids) == 0:
+                    if not shuffle_file_ids:
                         shuffle_file_ids = file_ids.copy()
                         np.random.shuffle(shuffle_file_ids)
 
@@ -198,22 +194,22 @@ class SampleGeneratorFaceCelebAMaskHQ(SampleGeneratorBase):
                         if hat_path.exists():
                             hat = cv2_imread(hat_path)[...,0:1].astype(np.float32) / 255.0
                             mask *= (1-hat)
-                    
+
                     #if neck_path is not None:
                     #    neck_path = masks_path / neck_path
                     #    if neck_path.exists():
                     #        neck = cv2_imread(neck_path)[...,0:1].astype(np.float32) / 255.0
                     #        mask = np.clip(mask+neck, 0, 1)
-                            
+
                     warp_params = imagelib.gen_warp_params(resolution, random_flip, rotation_range=rotation_range, scale_range=scale_range, tx_range=tx_range, ty_range=ty_range )
-  
+
                     img = cv2.resize( img, (resolution,resolution), cv2.INTER_LANCZOS4 )
                     h, s, v = cv2.split(cv2.cvtColor(img, cv2.COLOR_BGR2HSV))
                     h = ( h + np.random.randint(360) ) % 360
                     s = np.clip ( s + np.random.random()-0.5, 0, 1 )
-                    v = np.clip ( v + np.random.random()/2-0.25, 0, 1 )                    
+                    v = np.clip ( v + np.random.random()/2-0.25, 0, 1 )
                     img = np.clip( cv2.cvtColor(cv2.merge([h, s, v]), cv2.COLOR_HSV2BGR) , 0, 1 )
-                            
+
                     if motion_blur is not None:
                         chance, mb_max_size = motion_blur
                         chance = np.clip(chance, 0, 100)
@@ -226,7 +222,7 @@ class SampleGeneratorFaceCelebAMaskHQ(SampleGeneratorBase):
                             img = imagelib.LinearMotionBlur (img, mblur_rnd_kernel, mblur_rnd_deg )
 
                     img = imagelib.warp_by_params (warp_params, img,  can_warp=True, can_transform=True, can_flip=True, border_replicate=False, cv2_inter=cv2.INTER_LANCZOS4)
-                    
+
                     if gaussian_blur is not None:
                         chance, kernel_max_size = gaussian_blur
                         chance = np.clip(chance, 0, 100)
@@ -236,7 +232,7 @@ class SampleGeneratorFaceCelebAMaskHQ(SampleGeneratorBase):
 
                         if gblur_rnd_chance < chance:
                             img = cv2.GaussianBlur(img, (gblur_rnd_kernel,) *2 , 0)
-                            
+
                     if random_bilinear_resize is not None:
                         chance, max_size_per = random_bilinear_resize
                         chance = np.clip(chance, 0, 100)                        
@@ -244,8 +240,8 @@ class SampleGeneratorFaceCelebAMaskHQ(SampleGeneratorBase):
                         resize_to = resolution - int( np.random.rand()* int(resolution*(max_size_per/100.0)) )                        
                         img = cv2.resize (img, (resize_to,resize_to), cv2.INTER_LINEAR )
                         img = cv2.resize (img, (resolution,resolution), cv2.INTER_LINEAR )
-                        
-                            
+
+
                     mask = cv2.resize( mask, (resolution,resolution), cv2.INTER_LANCZOS4 )[...,None]
                     mask = imagelib.warp_by_params (warp_params, mask, can_warp=True, can_transform=True, can_flip=True, border_replicate=False, cv2_inter=cv2.INTER_LANCZOS4)
                     mask[mask < 0.5] = 0.0
@@ -255,10 +251,10 @@ class SampleGeneratorFaceCelebAMaskHQ(SampleGeneratorBase):
                     if data_format == "NCHW":
                         img = np.transpose(img, (2,0,1) )
                         mask = np.transpose(mask, (2,0,1) )
-                        
+
                     if batches is None:
                         batches = [ [], [] ]
-                    
+
                     batches[0].append ( img )
                     batches[1].append ( mask )
 

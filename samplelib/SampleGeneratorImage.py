@@ -38,7 +38,7 @@ class SampleGeneratorImage(SampleGeneratorBase):
 
     def batch_func(self, samples):
         samples_len = len(samples)
-        
+
 
         idxs = [ *range(samples_len) ]
         shuffle_idxs = []
@@ -46,15 +46,15 @@ class SampleGeneratorImage(SampleGeneratorBase):
         while True:
 
             batches = None
-            for n_batch in range(self.batch_size):
+            for _ in range(self.batch_size):
 
-                if len(shuffle_idxs) == 0:
+                if not shuffle_idxs:
                     shuffle_idxs = idxs.copy()
                     np.random.shuffle (shuffle_idxs)
 
                 idx = shuffle_idxs.pop()
                 sample = samples[idx]
-                
+
                 x, = SampleProcessor.process ([sample], self.sample_process_options, self.output_sample_types, self.debug)
 
                 if batches is None:
