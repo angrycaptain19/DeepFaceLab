@@ -31,8 +31,8 @@ class IndexHost():
                 cq_id, count = obj[0], obj[1]
 
                 result = []
-                for i in range(count):
-                    if len(shuffle_idxs) == 0:
+                for _ in range(count):
+                    if not shuffle_idxs:
                         shuffle_idxs = idxs.copy()
                         rnd_state.shuffle(shuffle_idxs)
                     result.append(shuffle_idxs.pop())
@@ -99,29 +99,29 @@ class Index2DHost():
                 cq_id, count = obj[0], obj[1]
 
                 result = []
-                for i in range(count):
-                    if len(shuffle_idxs) == 0:
+                for _ in range(count):
+                    if not shuffle_idxs:
                         shuffle_idxs = idxs.copy()
                         np.random.shuffle(shuffle_idxs)
 
                     idx_1D = shuffle_idxs.pop()
-                    
+
                     #print(f'idx_1D = {idx_1D}, len(shuffle_idxs_2D[idx_1D])= {len(shuffle_idxs_2D[idx_1D])}')
-                    
+
                     if len(shuffle_idxs_2D[idx_1D]) == 0:
                         shuffle_idxs_2D[idx_1D] = idxs_2D[idx_1D].copy()
                         #print(f'new shuffle_idxs_2d for {idx_1D} = { shuffle_idxs_2D[idx_1D] }')
-                        
+
                         #print(f'len(shuffle_idxs_2D[idx_1D])= {len(shuffle_idxs_2D[idx_1D])}')
-                    
+
                         np.random.shuffle( shuffle_idxs_2D[idx_1D] )
 
                     idx_2D = shuffle_idxs_2D[idx_1D].pop()
-                    
+
                     #print(f'len(shuffle_idxs_2D[idx_1D])= {len(shuffle_idxs_2D[idx_1D])}')
-                    
+
                     #print(f'idx_2D = {idx_2D}')
-                    
+
 
                     result.append( indexes2D[idx_1D][idx_2D])
 
@@ -179,9 +179,7 @@ class ListHost():
                     item = self.m_list[idx ]
                     self.cqs[cq_id].put ( item )
                 elif cmd == 2:
-                    result = []
-                    for item in obj[2]:
-                        result.append ( self.m_list[item] )
+                    result = [self.m_list[item] for item in obj[2]]
                     self.cqs[cq_id].put ( result )
                 elif cmd == 3:
                     self.m_list.insert(obj[2], obj[3])

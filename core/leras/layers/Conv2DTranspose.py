@@ -89,9 +89,7 @@ class Conv2DTranspose(nn.LayerBase):
         return x
 
     def __str__(self):
-        r = f"{self.__class__.__name__} : in_ch:{self.in_ch} out_ch:{self.out_ch} "
-
-        return r
+        return f"{self.__class__.__name__} : in_ch:{self.in_ch} out_ch:{self.out_ch} "
 
     def deconv_length(self, dim_size, stride_size, kernel_size, padding):
         assert padding in {'SAME', 'VALID', 'FULL'}

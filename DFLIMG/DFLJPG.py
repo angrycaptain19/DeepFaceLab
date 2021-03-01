@@ -97,7 +97,7 @@ class DFLJPG(object):
                 #    #raise ValueError(f"Unknown chunk {chunk_m_h} in {filename}")
                 #    io.log_info(f"Unknown chunk {chunk_m_h} in {filename}")
 
-                if chunk_size == None: #variable size
+                if chunk_size is None: #variable size
                     chunk_size, = struct.unpack (">H", data[data_counter:data_counter+2])
                     chunk_size -= 2
                     data_counter += 2
@@ -140,7 +140,7 @@ class DFLJPG(object):
                         c, ver_major, ver_minor, units, Xdensity, Ydensity, Xthumbnail, Ythumbnail = struct_unpack (d, c, "=BBBHHBB")
                     else:
                         raise Exception("Unknown jpeg ID: %s" % (id) )
-                elif chunk['name'] == 'SOF0' or chunk['name'] == 'SOF2':
+                elif chunk['name'] in ['SOF0', 'SOF2']:
                     d, c = chunk['data'], 0
                     c, precision, height, width = struct_unpack (d, c, ">BHH")
                     inst.shape = (height, width, 3)
@@ -259,11 +259,7 @@ class DFLJPG(object):
 
     def get_seg_ie_polys(self):
         d = self.dfl_dict.get('seg_ie_polys',None)
-        if d is not None:
-            d = SegIEPolys.load(d)
-        else:
-            d = SegIEPolys()
-
+        d = SegIEPolys.load(d) if d is not None else SegIEPolys()
         return d
 
     def set_seg_ie_polys(self, seg_ie_polys):
@@ -271,11 +267,7 @@ class DFLJPG(object):
             if not isinstance(seg_ie_polys, SegIEPolys):
                 raise ValueError('seg_ie_polys should be instance of SegIEPolys')
 
-            if seg_ie_polys.has_polys():
-                seg_ie_polys = seg_ie_polys.dump()
-            else:
-                seg_ie_polys = None
-
+            seg_ie_polys = seg_ie_polys.dump() if seg_ie_polys.has_polys() else None
         self.dfl_dict['seg_ie_polys'] = seg_ie_polys
 
     def has_xseg_mask(self):

@@ -17,15 +17,9 @@ class ScaleAdd(nn.LayerBase):
         return [self.weight]
 
     def forward(self, inputs):
-        if nn.data_format == "NHWC":
-            shape = (1,1,1,self.ch)
-        else:
-            shape = (1,self.ch,1,1)
-
+        shape = (1, 1, 1, self.ch) if nn.data_format == "NHWC" else (1, self.ch, 1, 1)
         weight = tf.reshape ( self.weight, shape )
 
         x0, x1 = inputs
-        x = x0 + x1*weight
-
-        return x
+        return x0 + x1*weight
 nn.ScaleAdd = ScaleAdd

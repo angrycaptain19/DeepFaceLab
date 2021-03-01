@@ -74,11 +74,7 @@ class FANExtractor(object):
                 self.b1 = ConvBlock (in_planes, 256)
                 self.b2 = ConvBlock (in_planes, 256)
 
-                if depth > 1:
-                    self.b2_plus = HourGlass(256, depth-1)
-                else:
-                    self.b2_plus = ConvBlock(256, 256)
-
+                self.b2_plus = HourGlass(256, depth-1) if depth > 1 else ConvBlock(256, 256)
                 self.b3 = ConvBlock(256, 256)
 
             def forward(self, input):
@@ -165,7 +161,7 @@ class FANExtractor(object):
 
         self.model.build_for_run ([ ( tf.float32, (None,256,256,3) ) ])
 
-    def extract (self, input_image, rects, second_pass_extractor=None, is_bgr=True, multi_sample=False):
+    def extract(self, input_image, rects, second_pass_extractor=None, is_bgr=True, multi_sample=False):
         if len(rects) == 0:
             return []
 
@@ -199,9 +195,10 @@ class FANExtractor(object):
                 images = np.stack (images)
                 images = images.astype(np.float32) / 255.0
 
-                predicted = []
-                for i in range( len(images) ):
-                    predicted += [ self.model.run ( [ images[i][None,...] ]  )[0] ]
+                predicted = [
+                    self.model.run([images[i][None, ...]])[0]
+                    for i in range(len(images))
+                ]
 
                 predicted = np.stack(predicted)
 
@@ -246,10 +243,9 @@ class FANExtractor(object):
 
         if image.ndim > 2:
             newDim = np.array([br[1] - ul[1], br[0] - ul[0], image.shape[2]], dtype=np.int32)
-            newImg = np.zeros(newDim, dtype=np.uint8)
         else:
             newDim = np.array([br[1] - ul[1], br[0] - ul[0]], dtype=np.int)
-            newImg = np.zeros(newDim, dtype=np.uint8)
+        newImg = np.zeros(newDim, dtype=np.uint8)
         ht = image.shape[0]
         wd = image.shape[1]
         newX = np.array([max(1, -ul[0] + 1), min(br[0], wd) - ul[0]], dtype=np.int32)

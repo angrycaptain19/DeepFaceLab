@@ -121,7 +121,7 @@ class QSubprocessor(object):
             except:
                 raise Exception (f"Unable to start subprocess {name}. Error: {traceback.format_exc()}")
 
-        if len(self.clis) == 0:
+        if not self.clis:
             raise Exception ("Unable to start QSubprocessor '%s' " % (self.name))
 
         #waiting subprocesses their success(or not) initialization
@@ -140,16 +140,16 @@ class QSubprocessor(object):
                         cli.kill()
                         self.clis.remove(cli)
                         break
-            if all ([cli.state == 0 for cli in self.clis]):
+            if all(cli.state == 0 for cli in self.clis):
                 break
             io.process_messages(0.005)
 
-        if len(self.clis) == 0:
+        if not self.clis:
             raise Exception ( "Unable to start subprocesses." )
 
         #ok some processes survived, initialize host logic
         self.on_clients_initialized()
-                
+
         self.q_timer = QTimer()
         self.q_timer.timeout.connect(self.tick)
         self.q_timer.start(5)
@@ -210,13 +210,17 @@ class QSubprocessor(object):
                     io.progress_bar_inc(obj['c'])
 
         for cli in self.clis[:]:
-            if cli.state == 1:
-                if cli.sent_time != 0 and self.no_response_time_sec != 0 and (time.time() - cli.sent_time) > self.no_response_time_sec:
-                    #subprocess busy too long
-                    io.log_info ( '%s doesnt response, terminating it.' % (cli.name) )
-                    self.on_data_return (cli.host_dict, cli.sent_data )
-                    cli.kill()
-                    self.clis.remove(cli)
+            if (
+                cli.state == 1
+                and cli.sent_time != 0
+                and self.no_response_time_sec != 0
+                and (time.time() - cli.sent_time) > self.no_response_time_sec
+            ):
+                #subprocess busy too long
+                io.log_info ( '%s doesnt response, terminating it.' % (cli.name) )
+                self.on_data_return (cli.host_dict, cli.sent_data )
+                cli.kill()
+                self.clis.remove(cli)
 
         for cli in self.clis[:]:
             if cli.state == 0:
@@ -229,7 +233,7 @@ class QSubprocessor(object):
                     cli.sent_data = data
                     cli.state = 1
 
-        if all ([cli.state == 0 for cli in self.clis]):
+        if all(cli.state == 0 for cli in self.clis):
             #gracefully terminating subprocesses
             for cli in self.clis[:]:
                 cli.s2c.put ( {'op': 'close'} )
@@ -252,7 +256,7 @@ class QSubprocessor(object):
                         cli.state = 2
                         cli.kill()
 
-                if all ([cli.state == 2 for cli in self.clis]):
+                if all(cli.state == 2 for cli in self.clis):
                     break
 
             #finalizing host logic

@@ -83,7 +83,7 @@ class MPSharedList():
             table_offset = 0
             table_size   = (obj_count+1)*8
             data_offset  = table_offset + table_size
-            data_size    = sum([len(x) for x in obj_pickled_ar])
+            data_size = sum(len(x) for x in obj_pickled_ar)
 
             sh_b = multiprocessing.RawArray('B', table_size + data_size)
             #sh_b[0:8] = struct.pack('<Q', obj_count)

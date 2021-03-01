@@ -38,12 +38,10 @@ class Conv2D(nn.LayerBase):
 
         if nn.data_format == "NHWC":
             strides = [1,strides,strides,1]
+            dilations = [1,dilations,dilations,1]
         else:
             strides = [1,1,strides,strides]
 
-        if nn.data_format == "NHWC":
-            dilations = [1,dilations,dilations,1]
-        else:
             dilations = [1,1,dilations,dilations]
 
         self.in_ch = in_ch
@@ -106,7 +104,5 @@ class Conv2D(nn.LayerBase):
         return x
 
     def __str__(self):
-        r = f"{self.__class__.__name__} : in_ch:{self.in_ch} out_ch:{self.out_ch} "
-
-        return r
+        return f"{self.__class__.__name__} : in_ch:{self.in_ch} out_ch:{self.out_ch} "
 nn.Conv2D = Conv2D

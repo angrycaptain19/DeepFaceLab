@@ -109,8 +109,12 @@ class Sample(object):
                 return f.read()
 
     def load_bgr(self):
-        img = cv2_imread (self.filename, loader_func=self.read_raw_file).astype(np.float32) / 255.0
-        return img
+        return (
+            cv2_imread(self.filename, loader_func=self.read_raw_file).astype(
+                np.float32
+            )
+            / 255.0
+        )
 
     def get_config(self):
         return {'sample_type': self.sample_type,

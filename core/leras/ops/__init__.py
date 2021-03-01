@@ -10,23 +10,23 @@ nn.tf_get_value = tf_get_value
 
 
 def batch_set_value(tuples):
-    if len(tuples) != 0:
-        with nn.tf.device('/CPU:0'):
-            assign_ops = []
-            feed_dict = {}
+    if len(tuples) == 0:
+        return
+    with nn.tf.device('/CPU:0'):
+        assign_ops = []
+        feed_dict = {}
 
-            for x, value in tuples:
-                if isinstance(value, nn.tf.Operation) or \
-                    isinstance(value, nn.tf.Variable):
-                    assign_ops.append(value)
-                else:
-                    value = np.asarray(value, dtype=x.dtype.as_numpy_dtype)
-                    assign_placeholder = nn.tf.placeholder( x.dtype.base_dtype, shape=[None]*value.ndim )
-                    assign_op = nn.tf.assign (x, assign_placeholder )
-                    assign_ops.append(assign_op)
-                    feed_dict[assign_placeholder] = value
+        for x, value in tuples:
+            if isinstance(value, (nn.tf.Operation, nn.tf.Variable)):
+                assign_ops.append(value)
+            else:
+                value = np.asarray(value, dtype=x.dtype.as_numpy_dtype)
+                assign_placeholder = nn.tf.placeholder( x.dtype.base_dtype, shape=[None]*value.ndim )
+                assign_op = nn.tf.assign (x, assign_placeholder )
+                assign_ops.append(assign_op)
+                feed_dict[assign_placeholder] = value
 
-            nn.tf_sess.run(assign_ops, feed_dict=feed_dict)
+        nn.tf_sess.run(assign_ops, feed_dict=feed_dict)
 nn.batch_set_value = batch_set_value
 
 def init_weights(weights):
@@ -107,14 +107,14 @@ def gelu(x):
 nn.gelu = gelu
 
 def upsample2d(x, size=2):
-    if nn.data_format == "NCHW":
-        b,c,h,w = x.shape.as_list()
-        x = tf.reshape (x, (-1,c,h,1,w,1) )
-        x = tf.tile(x, (1,1,1,size,1,size) )
-        x = tf.reshape (x, (-1,c,h*size,w*size) )
-        return x
-    else:
+    if nn.data_format != "NCHW":
         return tf.image.resize_nearest_neighbor(x, (x.shape[1]*size, x.shape[2]*size) )
+
+    b,c,h,w = x.shape.as_list()
+    x = tf.reshape (x, (-1,c,h,1,w,1) )
+    x = tf.tile(x, (1,1,1,size,1,size) )
+    x = tf.reshape (x, (-1,c,h*size,w*size) )
+    return x
 nn.upsample2d = upsample2d
 
 def resize2d_bilinear(x, size=2):
@@ -124,11 +124,7 @@ def resize2d_bilinear(x, size=2):
     if nn.data_format == "NCHW":
         x = tf.transpose(x, (0,2,3,1))
 
-    if size > 0:
-        new_size = (h*size,w*size)
-    else:
-        new_size = (h//-size,w//-size)
-
+    new_size = (h*size, w*size) if size > 0 else (h//-size, w//-size)
     x = tf.image.resize(x, new_size, method=tf.image.ResizeMethod.BILINEAR)
 
     if nn.data_format == "NCHW":
@@ -150,24 +146,6 @@ def resize2d_nearest(x, size=2):
         else:
             x = x[:,::-size,::-size,:]
     return x
-
-    h = x.shape[nn.conv2d_spatial_axes[0]].value
-    w = x.shape[nn.conv2d_spatial_axes[1]].value
-
-    if nn.data_format == "NCHW":
-        x = tf.transpose(x, (0,2,3,1))
-
-    if size > 0:
-        new_size = (h*size,w*size)
-    else:
-        new_size = (h//-size,w//-size)
-
-    x = tf.image.resize(x, new_size, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
-
-    if nn.data_format == "NCHW":
-        x = tf.transpose(x, (0,3,1,2))
-
-    return x
 nn.resize2d_nearest = resize2d_nearest
 
 def flatten(x):
@@ -187,13 +165,13 @@ def max_pool(x, kernel_size=2, strides=2):
 nn.max_pool = max_pool
 
 def reshape_4D(x, w,h,c):
-    if nn.data_format == "NHWC":
-        # match NCHW version in order to switch data_format without problems
-        x = tf.reshape (x, (-1,c,h,w))
-        x = tf.transpose(x, (0,2,3,1) )
-        return x
-    else:
+    if nn.data_format != "NHWC":
         return tf.reshape (x, (-1,c,h,w))
+
+    # match NCHW version in order to switch data_format without problems
+    x = tf.reshape (x, (-1,c,h,w))
+    x = tf.transpose(x, (0,2,3,1) )
+    return x
 nn.reshape_4D = reshape_4D
 
 def random_binomial(shape, p=0.0, dtype=None, seed=None):
@@ -308,40 +286,32 @@ def dssim(img1,img2, max_val, filter_size=11, filter_sigma=1.5, k1=0.01, k2=0.03
 nn.dssim = dssim
 
 def space_to_depth(x, size):
-    if nn.data_format == "NHWC":
-        # match NCHW version in order to switch data_format without problems
-        b,h,w,c = x.shape.as_list()
-        oh, ow = h // size, w // size
-        x = tf.reshape(x, (-1, size, oh, size, ow, c))
-        x = tf.transpose(x, (0, 2, 4, 1, 3, 5))
-        x = tf.reshape(x, (-1, oh, ow, size* size* c ))
-        return x
-    else:
+    if nn.data_format != "NHWC":
         return tf.space_to_depth(x, size, data_format=nn.data_format)
+
+    # match NCHW version in order to switch data_format without problems
+    b,h,w,c = x.shape.as_list()
+    oh, ow = h // size, w // size
+    x = tf.reshape(x, (-1, size, oh, size, ow, c))
+    x = tf.transpose(x, (0, 2, 4, 1, 3, 5))
+    x = tf.reshape(x, (-1, oh, ow, size* size* c ))
+    return x
 nn.space_to_depth = space_to_depth
 
 def depth_to_space(x, size):
-    if nn.data_format == "NHWC":
-        # match NCHW version in order to switch data_format without problems
-
-        b,h,w,c = x.shape.as_list()
-        oh, ow = h * size, w * size
-        oc = c // (size * size)
-
-        x = tf.reshape(x, (-1, h, w, size, size, oc, ) )
-        x = tf.transpose(x, (0, 1, 3, 2, 4, 5))
-        x = tf.reshape(x, (-1, oh, ow, oc, ))
-        return x
-    else:
+    if nn.data_format != "NHWC":
         return tf.depth_to_space(x, size, data_format=nn.data_format)
-        b,c,h,w = x.shape.as_list()
-        oh, ow = h * size, w * size
-        oc = c // (size * size)
 
-        x = tf.reshape(x, (-1, size, size, oc, h, w, ) )
-        x = tf.transpose(x, (0, 3, 4, 1, 5, 2))
-        x = tf.reshape(x, (-1, oc, oh, ow))
-        return x
+    # match NCHW version in order to switch data_format without problems
+
+    b,h,w,c = x.shape.as_list()
+    oh, ow = h * size, w * size
+    oc = c // (size * size)
+
+    x = tf.reshape(x, (-1, h, w, size, size, oc, ) )
+    x = tf.transpose(x, (0, 1, 3, 2, 4, 5))
+    x = tf.reshape(x, (-1, oh, ow, oc, ))
+    return x
 nn.depth_to_space = depth_to_space
 
 def pixel_norm(x, power = 1.0):
@@ -385,10 +355,9 @@ def total_variation_mse(images):
     """
     pixel_dif1 = images[:, 1:, :, :] - images[:, :-1, :, :]
     pixel_dif2 = images[:, :, 1:, :] - images[:, :, :-1, :]
-    
-    tot_var = ( tf.reduce_sum(tf.square(pixel_dif1), axis=[1,2,3]) +
+
+    return ( tf.reduce_sum(tf.square(pixel_dif1), axis=[1,2,3]) +
                 tf.reduce_sum(tf.square(pixel_dif2), axis=[1,2,3]) )
-    return tot_var
 nn.total_variation_mse = total_variation_mse
 
 """

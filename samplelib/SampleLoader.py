@@ -27,9 +27,7 @@ class SampleLoader:
 
         if samples is None:
             raise ValueError("packed faceset not found.")
-        persons_name_idxs = {}
-        for sample in samples:
-            persons_name_idxs[sample.person_name] = 0
+        persons_name_idxs = {sample.person_name: 0 for sample in samples}
         return len(list(persons_name_idxs.keys()))
 
     @staticmethod

@@ -48,7 +48,7 @@ class Screen(object):
         return self.image
         
     def set_image(self, img):
-        if not img is self.image:
+        if img is not self.image:
             self.force_update = True
 
         self.image = img

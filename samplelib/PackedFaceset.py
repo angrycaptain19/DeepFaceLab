@@ -47,44 +47,42 @@ class PackedFaceset():
             samples_configs.append ( sample.get_config() )
         samples_bytes = pickle.dumps(samples_configs, 4)
 
-        of = open(samples_dat_path, "wb")
-        of.write ( struct.pack ("Q", PackedFaceset.VERSION ) )
-        of.write ( struct.pack ("Q", len(samples_bytes) ) )
-        of.write ( samples_bytes )
+        with open(samples_dat_path, "wb") as of:
+            of.write ( struct.pack ("Q", PackedFaceset.VERSION ) )
+            of.write ( struct.pack ("Q", len(samples_bytes) ) )
+            of.write ( samples_bytes )
 
-        del samples_bytes   #just free mem
-        del samples_configs
+            del samples_bytes   #just free mem
+            del samples_configs
 
-        sample_data_table_offset = of.tell()
-        of.write ( bytes( 8*(samples_len+1) ) ) #sample data offset table
+            sample_data_table_offset = of.tell()
+            of.write ( bytes( 8*(samples_len+1) ) ) #sample data offset table
 
-        data_start_offset = of.tell()
-        offsets = []
+            data_start_offset = of.tell()
+            offsets = []
 
-        for sample in io.progress_bar_generator(samples, "Packing"):
-            try:
-                if sample.person_name is not None:
-                    sample_path = samples_path / sample.person_name / sample.filename
-                else:
-                    sample_path = samples_path / sample.filename
+            for sample in io.progress_bar_generator(samples, "Packing"):
+                try:
+                    if sample.person_name is not None:
+                        sample_path = samples_path / sample.person_name / sample.filename
+                    else:
+                        sample_path = samples_path / sample.filename
 
 
-                with open(sample_path, "rb") as f:
-                   b = f.read()
+                    with open(sample_path, "rb") as f:
+                       b = f.read()
 
-                offsets.append ( of.tell() - data_start_offset )
-                of.write(b)
-            except:
-                raise Exception(f"error while processing sample {sample_path}")
+                    offsets.append ( of.tell() - data_start_offset )
+                    of.write(b)
+                except:
+                    raise Exception(f"error while processing sample {sample_path}")
 
-        offsets.append ( of.tell() )
+            offsets.append ( of.tell() )
 
-        of.seek(sample_data_table_offset, 0)
-        for offset in offsets:
-            of.write ( struct.pack("Q", offset) )
-        of.seek(0,2)
-        of.close()
-
+            of.seek(sample_data_table_offset, 0)
+            for offset in offsets:
+                of.write ( struct.pack("Q", offset) )
+            of.seek(0,2)
         for filename in io.progress_bar_generator(image_paths, "Deleting files"):
             Path(filename).unlink()
 
@@ -131,23 +129,21 @@ class PackedFaceset():
         if not samples_dat_path.exists():
             return None
 
-        f = open(samples_dat_path, "rb")
-        version, = struct.unpack("Q", f.read(8) )
-        if version != PackedFaceset.VERSION:
-            raise NotImplementedError
+        with open(samples_dat_path, "rb") as f:
+            version, = struct.unpack("Q", f.read(8) )
+            if version != PackedFaceset.VERSION:
+                raise NotImplementedError
 
-        sizeof_samples_bytes, = struct.unpack("Q", f.read(8) )
+            sizeof_samples_bytes, = struct.unpack("Q", f.read(8) )
 
-        samples_configs = pickle.loads ( f.read(sizeof_samples_bytes) )
-        samples = []
-        for sample_config in samples_configs:
-            sample_config = pickle.loads(pickle.dumps (sample_config))
-            samples.append ( Sample (**sample_config) )
+            samples_configs = pickle.loads ( f.read(sizeof_samples_bytes) )
+            samples = []
+            for sample_config in samples_configs:
+                sample_config = pickle.loads(pickle.dumps (sample_config))
+                samples.append ( Sample (**sample_config) )
 
-        offsets = [ struct.unpack("Q", f.read(8) )[0] for _ in range(len(samples)+1) ]
-        data_start_offset = f.tell()
-        f.close()
-
+            offsets = [ struct.unpack("Q", f.read(8) )[0] for _ in range(len(samples)+1) ]
+            data_start_offset = f.tell()
         for i, sample in enumerate(samples):
             start_offset, end_offset = offsets[i], offsets[i+1]
             sample.set_filename_offset_size( str(samples_dat_path), data_start_offset+start_offset, end_offset-start_offset )

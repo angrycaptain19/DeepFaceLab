@@ -20,7 +20,7 @@ class SubprocessGenerator(object):
             thread.daemon = True
             thread.start()
 
-        while not all ([generator._is_started() for generator in generator_list]):
+        while not all(generator._is_started() for generator in generator_list):
             time.sleep(0.005)
     
     def __init__(self, generator_func, user_param=None, prefetch=2, start_now=True):
@@ -35,7 +35,7 @@ class SubprocessGenerator(object):
             self._start()
 
     def _start(self):
-        if self.p == None:
+        if self.p is None:
             user_param = self.user_param
             self.user_param = None
             p = multiprocessing.Process(target=self.process_func, args=(user_param,) )

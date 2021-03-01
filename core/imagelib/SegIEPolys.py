@@ -12,11 +12,8 @@ class SegIEPolyType(IntEnum):
 class SegIEPoly():
     def __init__(self, type=None, pts=None, **kwargs):
         self.type = type
-        
-        if pts is None:
-            pts = np.empty( (0,2), dtype=np.float32 )
-        else:
-            pts = np.float32(pts)
+
+        pts = np.empty( (0,2), dtype=np.float32 ) if pts is None else np.float32(pts)
         self.pts = pts
         self.n_max = self.n = len(pts)
 
@@ -89,8 +86,10 @@ class SegIEPolys():
         o_polys_len = len(b.polys)
         if polys_len != o_polys_len:
             return False
-        
-        return all ([ a_poly.identical(b_poly) for a_poly, b_poly in zip(self.polys, b.polys) ])
+
+        return all(
+            a_poly.identical(b_poly) for a_poly, b_poly in zip(self.polys, b.polys)
+        )
         
     def add_poly(self, ie_poly_type):       
         poly = SegIEPoly(ie_poly_type)
@@ -111,7 +110,7 @@ class SegIEPolys():
         return self.polys
         
     def get_pts_count(self):
-        return sum([poly.get_pts_count() for poly in self.polys])
+        return sum(poly.get_pts_count() for poly in self.polys)
         
     def sort(self):
         poly_by_type = { SegIEPolyType.EXCLUDE : [], SegIEPolyType.INCLUDE : [] }
@@ -122,8 +121,7 @@ class SegIEPolys():
         self.polys = poly_by_type[SegIEPolyType.INCLUDE] + poly_by_type[SegIEPolyType.EXCLUDE]
 
     def __iter__(self):
-        for poly in self.polys:
-            yield poly
+        yield from self.polys
 
     def overlay_mask(self, mask):
         h,w,c = mask.shape

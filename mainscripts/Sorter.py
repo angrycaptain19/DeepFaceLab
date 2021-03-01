@@ -300,7 +300,7 @@ class HistDissimSubprocessor(Subprocessor):
         def process_data(self, data):
             i = data[0]
             score_total = 0
-            for j in range( 0, self.img_list_len):
+            for j in range(self.img_list_len):
                 if i == j:
                     continue
                 score_total += cv2.compareHist(self.img_list[i][1], self.img_list[j][1], cv2.HISTCMP_BHATTACHARYYA)
@@ -315,7 +315,7 @@ class HistDissimSubprocessor(Subprocessor):
     #override
     def __init__(self, img_list ):
         self.img_list = img_list
-        self.img_list_range = [i for i in range(0, len(img_list) )]
+        self.img_list_range = [i for i in range(len(img_list))]
         self.result = []
         super().__init__('HistDissim', HistDissimSubprocessor.Cli, 60)
 
@@ -641,7 +641,7 @@ def sort_best(input_path, faster=False):
                (g < grads-1     and s_yaw >= yaw and s_yaw < next_yaw) or \
                (g == grads-1    and s_yaw >= yaw):
                 yaw_samples += [ img ]
-        if len(yaw_samples) > 0:
+        if yaw_samples:
             yaws_sample_list[g] = yaw_samples
 
     total_lack = 0
@@ -695,7 +695,7 @@ def sort_best(input_path, faster=False):
                    (pg == pitch_grads-1    and s_pitch >= pitch):
                     pitch_samples += [ img ]
 
-            if len(pitch_samples) > 0:
+            if pitch_samples:
                 pitch_sample_list[pg] = pitch_samples
         yaw_pitch_sample_list[g] = pitch_sample_list
 

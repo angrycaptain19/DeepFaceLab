@@ -108,7 +108,7 @@ class ImagePreviewSequenceBar(QFrame):
         prev_img_conts_len = len(self.prev_img_conts)
         prev_q_imgs_len = len(prev_imgs)
         if prev_q_imgs_len < prev_img_conts_len:
-            for i in range ( prev_img_conts_len - prev_q_imgs_len ):
+            for _ in range ( prev_img_conts_len - prev_q_imgs_len ):
                 prev_imgs.append(None)
         elif prev_q_imgs_len > prev_img_conts_len:
             prev_imgs = prev_imgs[:prev_img_conts_len]
@@ -118,7 +118,7 @@ class ImagePreviewSequenceBar(QFrame):
         next_img_conts_len = len(self.next_img_conts)
         next_q_imgs_len = len(next_imgs)
         if next_q_imgs_len < next_img_conts_len:
-            for i in range ( next_img_conts_len - next_q_imgs_len ):
+            for _ in range ( next_img_conts_len - next_q_imgs_len ):
                 next_imgs.append(None)
         elif next_q_imgs_len > next_img_conts_len:
             next_imgs = next_imgs[:next_img_conts_len]
@@ -496,9 +496,11 @@ class QCanvasOperator(QWidget):
 
         for poly in reversed(self.ie_polys.get_polys()):
             pts = poly.get_pts()
-            if len(pts) >= 3:
-                if cv2.pointPolygonTest( pts, tuple(img_pos), False) >= 0:
-                    return poly
+            if (
+                len(pts) >= 3
+                and cv2.pointPolygonTest(pts, tuple(img_pos), False) >= 0
+            ):
+                return poly
 
         return None
 
@@ -592,10 +594,9 @@ class QCanvasOperator(QWidget):
 
     def set_view_lock(self, view_lock):
         if not hasattr(self, 'view_lock') or self.view_lock != view_lock:
-            if hasattr(self, 'view_lock') and self.view_lock != view_lock:
-                if view_lock == ViewLock.CENTER:
-                    self.img_look_pt = self.mouse_img_pt
-                    QCursor.setPos ( self.mapToGlobal( QPoint_from_np(self.img_to_cli_pt(self.img_look_pt)) ))
+            if hasattr(self, 'view_lock') and view_lock == ViewLock.CENTER:
+                self.img_look_pt = self.mouse_img_pt
+                QCursor.setPos ( self.mapToGlobal( QPoint_from_np(self.img_to_cli_pt(self.img_look_pt)) ))
 
             self.view_lock = view_lock
             self.update()
@@ -613,7 +614,7 @@ class QCanvasOperator(QWidget):
 
 
     def set_color_scheme_id(self, id):
-        if self.op_mode == OpMode.VIEW_BAKED or self.op_mode == OpMode.VIEW_XSEG_MASK:
+        if self.op_mode in [OpMode.VIEW_BAKED, OpMode.VIEW_XSEG_MASK]:
             self.set_op_mode(OpMode.NONE)
 
         if not hasattr(self, 'color_scheme_id') or self.color_scheme_id != id:
@@ -672,11 +673,12 @@ class QCanvasOperator(QWidget):
                     if self.mouse_op_poly_pt_id is not None:
                         nc = Qt.PointingHandCursor
 
-                    if self.pt_edit_mode == PTEditMode.ADD_DEL:
-
-                        if self.mouse_op_poly_edge_id is not None and \
-                        self.mouse_op_poly_pt_id is None:
-                            nc = color_cc
+                    if (
+                        self.pt_edit_mode == PTEditMode.ADD_DEL
+                        and self.mouse_op_poly_edge_id is not None
+                        and self.mouse_op_poly_pt_id is None
+                    ):
+                        nc = color_cc
             if self.current_cursor != nc:
                 if self.current_cursor is None:
                     QApplication.setOverrideCursor(nc)
@@ -731,18 +733,16 @@ class QCanvasOperator(QWidget):
 
 
     def action_undo_pt(self):
-        if self.drag_type == DragType.NONE:
-            if self.op_mode == OpMode.DRAW_PTS:
-                if self.op_poly.undo() == 0:
-                    self.ie_polys.remove_poly (self.op_poly)
-                    self.set_op_mode(OpMode.NONE)
-                self.update()
+        if self.drag_type == DragType.NONE and self.op_mode == OpMode.DRAW_PTS:
+            if self.op_poly.undo() == 0:
+                self.ie_polys.remove_poly (self.op_poly)
+                self.set_op_mode(OpMode.NONE)
+            self.update()
 
     def action_redo_pt(self):
-        if self.drag_type == DragType.NONE:
-            if self.op_mode == OpMode.DRAW_PTS:
-                self.op_poly.redo()
-                self.update()
+        if self.drag_type == DragType.NONE and self.op_mode == OpMode.DRAW_PTS:
+            self.op_poly.redo()
+            self.update()
 
     def action_delete_poly(self):
         if self.op_mode == OpMode.EDIT_PTS and \
@@ -872,10 +872,12 @@ class QCanvasOperator(QWidget):
         btn = ev.button()
 
         if btn == Qt.LeftButton:
-            if self.op_mode == OpMode.EDIT_PTS:
-                if self.drag_type == DragType.POLY_PT:
-                    self.drag_type = DragType.NONE
-                    self.update()
+            if (
+                self.op_mode == OpMode.EDIT_PTS
+                and self.drag_type == DragType.POLY_PT
+            ):
+                self.drag_type = DragType.NONE
+                self.update()
 
         elif btn == Qt.MiddleButton:
             if self.drag_type == DragType.IMAGE_LOOK:
@@ -1017,17 +1019,17 @@ class QCanvasOperator(QWidget):
                         # Line from last point to mouse
                         poly_line_path.lineTo( QPoint_from_np(self.mouse_cli_pt) )
 
-                    if self.mouse_op_poly_pt_id is not None:
-                        pass
-
-                    if self.mouse_op_poly_edge_id_pt is not None:
-                        if self.pt_edit_mode == PTEditMode.ADD_DEL and self.mouse_op_poly_pt_id is None:
-                            # Ready to insert point on edge
-                            m_cli_pt = self.mouse_op_poly_edge_id_pt
-                            pts_line_path.moveTo( QPoint_from_np(m_cli_pt + np.float32([0,-pt_rad])) )
-                            pts_line_path.lineTo( QPoint_from_np(m_cli_pt + np.float32([0,pt_rad])) )
-                            pts_line_path.moveTo( QPoint_from_np(m_cli_pt + np.float32([-pt_rad,0])) )
-                            pts_line_path.lineTo( QPoint_from_np(m_cli_pt + np.float32([pt_rad,0])) )
+                    if (
+                        self.mouse_op_poly_edge_id_pt is not None
+                        and self.pt_edit_mode == PTEditMode.ADD_DEL
+                        and self.mouse_op_poly_pt_id is None
+                    ):
+                        # Ready to insert point on edge
+                        m_cli_pt = self.mouse_op_poly_edge_id_pt
+                        pts_line_path.moveTo( QPoint_from_np(m_cli_pt + np.float32([0,-pt_rad])) )
+                        pts_line_path.lineTo( QPoint_from_np(m_cli_pt + np.float32([0,pt_rad])) )
+                        pts_line_path.moveTo( QPoint_from_np(m_cli_pt + np.float32([-pt_rad,0])) )
+                        pts_line_path.lineTo( QPoint_from_np(m_cli_pt + np.float32([pt_rad,0])) )
 
                 if len(poly_pts) >= 2:
                     # Closing poly line
@@ -1048,9 +1050,8 @@ class QCanvasOperator(QWidget):
                     qp.setPen(color_scheme.poly_outline_dot_pen)
 
                 qp.setBrush(color_scheme.poly_unselected_brush)
-                if op_mode == OpMode.NONE:
-                    if poly == self.mouse_wire_poly:
-                        qp.setBrush(color_scheme.poly_selected_brush)
+                if op_mode == OpMode.NONE and poly == self.mouse_wire_poly:
+                    qp.setBrush(color_scheme.poly_selected_brush)
                 #else:
                 #    if poly == op_poly:
                 #        qp.setBrush(color_scheme.poly_selected_brush)
